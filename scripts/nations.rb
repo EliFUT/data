@@ -1,7 +1,6 @@
-require 'open-uri'
+require_relative 'common'
 
 total_nations = 219
-src_base_url = "http://fifa15.content.easports.com/fifa/fltOnlineAssets/8D941B48-51BB-4B87-960A-06A61A62EBC0/2015/fut/items/images"
 dst_base_url = "../images/nations"
 
 1.upto(total_nations) do |id|
