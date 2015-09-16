@@ -9,10 +9,10 @@ dst_base_url = "../images/nations"
 
   unless File.exist?(large_image_path)
     puts "Downloading nation #{id} large..."
-    `curl -s #{src_base_url}/cardflagslarge/web/#{id}.png > #{large_image_path}`
+    `curl -s #{SRC_BASE_URL}/cardflagslarge/web/#{id}.png > #{large_image_path}`
   end
   unless File.exist?(normal_image_path)
     puts "Downloading nation #{id} normal..."
-    `curl -s #{src_base_url}/cardflagssmall/web/#{id}.png > #{normal_image_path}`
+    `curl -s #{SRC_BASE_URL}/cardflagssmall/web/#{id}.png > #{normal_image_path}`
   end
 end

@@ -5,6 +5,6 @@ leagues = [1, 4, 10, 13, 14, 16, 17, 19, 20, 31, 32, 39, 41, 50, 53, 54, 56, 60,
 leagues.each do |id|
   image_path = "../images/leagues/league_#{id}.png"
   unless File.exist?(image_path)
-    `curl -s #{src_base_url}/leagueLogos_sm/web/l#{id}.png > #{image_path}`
+    `curl -s #{SRC_BASE_URL}/leagueLogos_sm/web/l#{id}.png > #{image_path}`
   end
 end
