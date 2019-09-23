@@ -2,18 +2,17 @@ package com.felipecsl.elifut
 
 import java.util.concurrent.TimeUnit
 
-import akka.pattern.{ask, pipe}
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.pattern.ask
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.Timeout
 import spray.json.RootJsonFormat
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
-import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContextExecutor
 
 class ItemsResponseParsingActor extends Actor with ActorLogging {
 
@@ -34,24 +33,6 @@ class ItemsResponseParsingActor extends Actor with ActorLogging {
     case resp@HttpResponse(code, _, _, _) =>
       log.info("Request failed, response code: " + code)
       resp.discardEntityBytes()
-  }
-}
-
-class ItemsRequestingActor(
-    sendAndReceive: HttpRequest => Future[HttpResponse],
-    implicit val ec: ExecutionContext
-) extends Actor with ActorLogging {
-
-  private val baseUrl = "https://www.easports.com/fifa/ultimate-team/api/fut/item"
-
-  def receive: PartialFunction[Any, Unit] = {
-    case page =>
-      val uri = baseUrl + "?jsonParamObject=%7B\"page\":" + page + "%7D"
-      val s = sender()
-      sendAndReceive(HttpRequest(uri = uri)).onComplete {
-        case Success(response) => s ! response
-        case Failure(exception) => s ! exception
-      }
   }
 }
 

@@ -5,7 +5,6 @@ import akka.http.scaladsl.model._
 import akka.testkit.{ImplicitSender, TestKit}
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
-import scala.concurrent.Future
 import scala.io.Source
 
 class ItemsResponseParsingActorSpec(_system: ActorSystem)
@@ -33,22 +32,6 @@ class ItemsResponseParsingActorSpec(_system: ActorSystem)
       val response = expectMsgType[ItemsResponse]
       response.totalPages should ===(908)
       response.totalResults should ===(21791)
-    }
-  }
-
-  "An ItemsRequestingActor" must {
-    "make the HTTP request" in {
-      val json = """{"hello":"world"}"""
-      val response: HttpRequest => Future[HttpResponse] =
-        _ => Future.successful {
-          HttpResponse(
-            status = StatusCodes.OK,
-            entity = HttpEntity(ContentTypes.`application/json`, json))
-        }
-      val props = Props(classOf[ItemsRequestingActor], response, system.dispatcher)
-      val actor = system.actorOf(props, "foo")
-      actor ! "1"
-      expectMsgType[HttpResponse]
     }
   }
 }
