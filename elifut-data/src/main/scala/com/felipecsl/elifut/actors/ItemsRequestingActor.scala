@@ -1,4 +1,4 @@
-package com.felipecsl.elifut
+package com.felipecsl.elifut.actors
 
 import akka.actor.{Actor, ActorLogging}
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
@@ -8,9 +8,9 @@ import scala.util.{Failure, Success}
 
 class ItemsRequestingActor(
     sendAndReceive: HttpRequest => Future[HttpResponse],
-    implicit val ec: ExecutionContext
 ) extends Actor with ActorLogging {
 
+  implicit private val dispatcher: ExecutionContext = context.system.dispatcher
   private val baseUrl = "https://www.easports.com/fifa/ultimate-team/api/fut/item"
 
   def receive: PartialFunction[Any, Unit] = {

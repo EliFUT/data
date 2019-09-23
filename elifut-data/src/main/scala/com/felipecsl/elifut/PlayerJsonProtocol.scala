@@ -1,5 +1,6 @@
 package com.felipecsl.elifut
 
+import com.felipecsl.elifut.models.{Attribute, Club, ClubImage, Headshot, IconAttributes, Image, League, Nation, Player, SizedImage, TeamStats}
 import spray.json.{DefaultJsonProtocol, JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, RootJsonFormat}
 
 object PlayerJsonProtocol extends DefaultJsonProtocol {

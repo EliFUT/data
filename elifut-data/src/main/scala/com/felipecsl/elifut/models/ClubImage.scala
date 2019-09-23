@@ -1,4 +1,4 @@
-package com.felipecsl.elifut
+package com.felipecsl.elifut.models
 
 case class ClubImage(
   dark: SizedImage,
