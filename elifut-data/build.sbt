@@ -13,6 +13,7 @@ lazy val root = (project in file("."))
       akkahttp % Compile,
       akkaHttpJson % Compile,
       akkaStream % Compile,
+      akkaTestKit % Test
     )
   )
 
