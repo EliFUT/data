@@ -1,7 +1,5 @@
 package com.felipecsl.elifut.actors
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
 import akka.pattern.ask
@@ -12,14 +10,14 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class ItemsFetchingActor(
-    sendAndReceive: HttpRequest => Future[HttpResponse],
+    httpRequestFn: HttpRequest => Future[HttpResponse],
+    implicit private val timeout: Timeout,
 ) extends Actor with ActorLogging {
-  implicit private val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
   private val system = context.system
   implicit private val dispatcher: ExecutionContext = system.dispatcher
   private val parsingActorClass = classOf[ItemsResponseParsingActor]
   private val requestingActorClass = classOf[ItemsRequestingActor]
-  private val requesterProps = Props(requestingActorClass, sendAndReceive)
+  private val requesterProps = Props(requestingActorClass, httpRequestFn)
   private val requestingActorRef = system.actorOf(requesterProps, "requester")
   private val parsingActorRef: ActorRef = system.actorOf(Props(parsingActorClass), "parser")
 

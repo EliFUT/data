@@ -7,7 +7,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class ItemsRequestingActor(
-    sendAndReceive: HttpRequest => Future[HttpResponse],
+    httpRequestFn: HttpRequest => Future[HttpResponse],
 ) extends Actor with ActorLogging {
 
   implicit private val dispatcher: ExecutionContext = context.system.dispatcher
@@ -17,7 +17,7 @@ class ItemsRequestingActor(
     case page =>
       val uri = baseUrl + "?jsonParamObject=%7B\"page\":" + page + "%7D"
       val s = sender()
-      sendAndReceive(HttpRequest(uri = uri)).onComplete {
+      httpRequestFn(HttpRequest(uri = uri)).onComplete {
         case Success(response) => s ! response
         case Failure(exception) => s ! exception
       }
