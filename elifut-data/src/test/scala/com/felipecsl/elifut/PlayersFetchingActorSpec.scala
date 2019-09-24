@@ -40,7 +40,8 @@ class PlayersFetchingActorSpec(_system: ActorSystem)
           )
           HttpResponse(
             status = StatusCodes.OK,
-            entity = HttpEntity(ContentTypes.`application/json`, finalJson))
+            entity = HttpEntity(ContentTypes.`application/json`, finalJson)
+          )
         }
       val props = Props(classOf[PlayersFetchingActor], responseFn, timeout)
       val actor = system.actorOf(props, "playerFetcher")

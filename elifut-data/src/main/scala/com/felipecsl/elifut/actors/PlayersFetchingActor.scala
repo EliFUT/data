@@ -28,9 +28,11 @@ class PlayersFetchingActor(
           .onComplete {
             case Success(response) => {
               val allPages = (1 to response.totalPages)
-                  .map(page => itemsFetchingActor.ask(page)
-                      .mapTo[ItemsResponse]
-                      .map(_.items))
+                  .map(page =>
+                    itemsFetchingActor.ask(page)
+                        .mapTo[ItemsResponse]
+                        .map(_.items)
+                  )
               Future.foldLeft(allPages)(Seq.empty[Player])(_ ++ _).onComplete {
                 case Success(players) => s ! players
                 case Failure(exception) => s ! exception
