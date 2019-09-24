@@ -5,9 +5,9 @@ import java.util.concurrent.TimeUnit
 import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.HttpRequest
-import com.felipecsl.elifut.actors.{ItemsFetchingActor, PlayersFetchingActor}
 import akka.pattern.ask
 import akka.util.Timeout
+import com.felipecsl.elifut.actors.PlayersFetchingActor
 import com.felipecsl.elifut.models.Player
 
 import scala.concurrent.ExecutionContext
