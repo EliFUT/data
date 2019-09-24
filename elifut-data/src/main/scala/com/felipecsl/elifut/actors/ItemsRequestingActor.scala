@@ -17,6 +17,7 @@ class ItemsRequestingActor(
     case page =>
       val uri = baseUrl + "?jsonParamObject=%7B\"page\":" + page + "%7D"
       val s = sender()
+      log.info(s"Requesting $uri...")
       httpRequestFn(HttpRequest(uri = uri)).onComplete {
         case Success(response) => s ! response
         case Failure(exception) => s ! exception

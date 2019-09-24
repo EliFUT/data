@@ -18,7 +18,7 @@ object MainApp extends App {
   implicit private val dispatcher: ExecutionContext = system.dispatcher
   private val requestToFuture = (r: HttpRequest) => Http(system).singleRequest(r)
   private val props = Props(classOf[PlayersFetchingActor], requestToFuture, timeout)
-  private val itemsFetchingActor = system.actorOf(props, "fetcher")
+  private val itemsFetchingActor = system.actorOf(props, "playersFetchingActor")
   itemsFetchingActor.ask()
       .mapTo[Seq[Player]]
       .onComplete(println)
