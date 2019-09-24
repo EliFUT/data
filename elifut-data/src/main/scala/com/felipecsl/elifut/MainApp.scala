@@ -1,44 +1,25 @@
 package com.felipecsl.elifut
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+import java.util.concurrent.TimeUnit
+
+import akka.actor.{ActorSystem, Props}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport._
-import akka.http.scaladsl.model._
-import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.pattern.pipe
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
-import spray.json.RootJsonFormat
+import akka.http.scaladsl.model.HttpRequest
+import akka.pattern.ask
+import akka.util.Timeout
+import com.felipecsl.elifut.actors.PlayersFetchingActor
+import com.felipecsl.elifut.models.Player
 
-class RequestActor extends Actor with ActorLogging {
-  import com.felipecsl.elifut.PlayerJsonProtocol._
-  import context.dispatcher
-
-  private final implicit val materializer: ActorMaterializer =
-    ActorMaterializer(ActorMaterializerSettings(context.system))
-
-  private val http = Http(context.system)
-
-  private implicit val itemsJsonFormat: RootJsonFormat[ItemsResponse] = jsonFormat6(ItemsResponse)
-
-  private val baseUrl =
-    "https://www.easports.com/fifa/ultimate-team/api/fut/item"
-
-  override def preStart(): Unit = {
-    http.singleRequest(HttpRequest(uri = baseUrl + "?jsonParamObject=%7B\"page\":1%7D"))
-      .pipeTo(self)
-  }
-
-  def receive: PartialFunction[Any, Unit] = {
-    case resp@HttpResponse(StatusCodes.OK, _, _, _) =>
-      Unmarshal(resp).to[ItemsResponse].onComplete(r => log.info(r.get.toString))
-    case resp@HttpResponse(code, _, _, _) =>
-      log.info("Request failed, response code: " + code)
-      resp.discardEntityBytes()
-  }
-}
+import scala.concurrent.ExecutionContext
 
 object MainApp extends App {
-  implicit val system: ActorSystem = ActorSystem()
-  private val actorRef: ActorRef = system.actorOf(Props[RequestActor], "requester")
-  actorRef ! "foo"
+  implicit private val system: ActorSystem = ActorSystem()
+  implicit private val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
+  implicit private val dispatcher: ExecutionContext = system.dispatcher
+  private val requestToFuture = (r: HttpRequest) => Http(system).singleRequest(r)
+  private val props = Props(classOf[PlayersFetchingActor], requestToFuture, timeout)
+  private val itemsFetchingActor = system.actorOf(props, "playersFetchingActor")
+  itemsFetchingActor.ask()
+      .mapTo[Seq[Player]]
+      .onComplete(println)
 }

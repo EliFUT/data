@@ -1,5 +1,6 @@
 package com.felipecsl.elifut
 
+import com.felipecsl.elifut.models.{Attribute, Club, ClubImage, Headshot, IconAttributes, Image, League, Nation, Player, SizedImage, TeamStats}
 import spray.json.{DefaultJsonProtocol, JsArray, JsBoolean, JsNull, JsNumber, JsObject, JsString, JsValue, RootJsonFormat}
 
 object PlayerJsonProtocol extends DefaultJsonProtocol {
@@ -89,8 +90,14 @@ object PlayerJsonProtocol extends DefaultJsonProtocol {
       val vision = fields(49) match { case JsNumber(value) => value }
       val volleys = fields(50) match { case JsNumber(value) => value }
       val weakFoot = fields(51) match { case JsNumber(value) => value }
-      val traits = fields(52) match { case JsArray(value) => value }
-      val specialities = fields(53) match { case JsArray(specialities) => specialities }
+      val traits = fields(52) match {
+        case JsArray(value) => value
+        case JsNull => null
+      }
+      val specialities = fields(53) match {
+        case JsArray(specialities) => specialities
+        case JsNull => null
+      }
       val atkWorkRate = fields(54) match { case JsString(atkWorkRate) => atkWorkRate }
       val defWorkRate = fields(55) match { case JsString(defWorkRate) => defWorkRate }
       val playerType = fields(56) match {
@@ -191,8 +198,8 @@ object PlayerJsonProtocol extends DefaultJsonProtocol {
         vision.toInt,
         volleys.toInt,
         weakFoot.toInt,
-        traits.map(_.convertTo[String]),
-        specialities.map(_.convertTo[String]),
+        Option(traits).map(_.map(_.convertTo[String])).getOrElse(Vector.empty),
+        Option(specialities).map(_.map(_.convertTo[String])).getOrElse(Vector.empty),
         atkWorkRate,
         defWorkRate,
         Option(playerType),

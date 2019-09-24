@@ -1,0 +1,130 @@
+{
+  "page": 1,
+  "totalPages": 10,
+  "totalResults": 10,
+  "type": "FUTPlayerItemList",
+  "count": 24,
+  "items": [
+    {
+      "commonName": "Cristiano Ronaldo",
+      "firstName": "C. Ronaldo",
+      "lastName": "dos Santos Aveiro",
+      "league": {
+        "imageUrls": {
+          "dark": "http://example.com/leagueLogos/dark/31.png",
+          "light": "http://example.com/leagueLogos/light/31.png"
+        },
+        "abbrName": "ITA 1",
+        "id": 31,
+        "imgUrl": null,
+        "name": "Serie A TIM"
+      },
+      "nation": {
+        "imageUrls": {
+          "small": "http://example.com/flags/list/38.png",
+          "medium": "http://example.com/flags/list/38.png",
+          "large": "http://example.com/flags/list/38.png"
+        },
+        "abbrName": "Portugal",
+        "id": 38,
+        "imgUrl": null,
+        "name": "Portugal"
+      },
+      "club": {
+        "imageUrls": {
+          "dark": {
+            "small": "http://example.com/clubs/dark/45.png",
+            "medium": "http://example.com/clubs/dark/45.png",
+            "large": "http://example.com/clubs/dark/45.png"
+          },
+          "light": {
+            "small": "http://example.com/clubs/normal/45.png",
+            "medium": "http://example.com/clubs/normal/45.png",
+            "large": "http://example.com/clubs/normal/45.png"
+          }
+        },
+        "abbrName": "Juventus",
+        "id": 45,
+        "imgUrl": null,
+        "name": "Juventus"
+      },
+      "headshot": {
+        "imgUrl": "http://example.com/portraits/20801.png",
+        "isDynamicPortrait": false
+      },
+      "position": "ST",
+      "composure": 99,
+      "playStyle": "Basic",
+      "playStyleId": null,
+      "height": 187,
+      "weight": 83,
+      "birthdate": "02/05/1985",
+      "age": 34,
+      "acceleration": 95,
+      "aggression": 75,
+      "agility": 94,
+      "balance": 76,
+      "ballcontrol": 99,
+      "foot": "Right",
+      "skillMoves": 5,
+      "crossing": 98,
+      "curve": 95,
+      "dribbling": 95,
+      "finishing": 99,
+      "freekickaccuracy": 89,
+      "gkdiving": 7,
+      "gkhandling": 11,
+      "gkkicking": 15,
+      "gkpositioning": 14,
+      "gkreflexes": 11,
+      "headingaccuracy": 99,
+      "interceptions": 41,
+      "jumping": 99,
+      "longpassing": 90,
+      "longshots": 99,
+      "marking": 40,
+      "penalties": 90,
+      "positioning": 99,
+      "potential": 94,
+      "reactions": 99,
+      "shortpassing": 95,
+      "shotpower": 99,
+      "slidingtackle": 32,
+      "sprintspeed": 98,
+      "standingtackle": 44,
+      "stamina": 99,
+      "strength": 95,
+      "vision": 96,
+      "volleys": 92,
+      "weakFoot": 4,
+      "traits": [
+      ],
+      "specialities": [
+      ],
+      "atkWorkRate": "High",
+      "defWorkRate": "Low",
+      "playerType": null,
+      "attributes": [
+      ],
+      "name": "<PLAYER NAME PLACEHOLDER>",
+      "rarityId": 5,
+      "isIcon": false,
+      "quality": "gold",
+      "isGK": false,
+      "positionFull": "Striker",
+      "isSpecialType": false,
+      "contracts": null,
+      "fitness": null,
+      "rawAttributeChemistryBonus": null,
+      "isLoan": null,
+      "squadPosition": null,
+      "iconAttributes": null,
+      "itemType": "player",
+      "discardValue": null,
+      "id": "100684097",
+      "modelName": "FUTPlayerItem",
+      "baseId": 20801,
+      "rating": 99
+    }
+  ]
+}
