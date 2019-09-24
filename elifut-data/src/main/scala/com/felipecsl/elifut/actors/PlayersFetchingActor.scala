@@ -10,9 +10,10 @@ import com.felipecsl.elifut.models.Player
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
+/** Returns a flattened {{{Seq[Player]}}} with objects from all paginated JSON responses. */
 class PlayersFetchingActor(
-    httpRequestFn: HttpRequest => Future[HttpResponse],
-    implicit private val timeout: Timeout,
+  httpRequestFn: HttpRequest => Future[HttpResponse],
+  implicit private val timeout: Timeout,
 ) extends Actor with ActorLogging {
   private val system = context.system
   implicit private val dispatcher: ExecutionContext = system.dispatcher
@@ -24,21 +25,20 @@ class PlayersFetchingActor(
     case _ =>
       val s = sender()
       itemsFetchingActor.ask(1)
-          .mapTo[ItemsResponse]
-          .onComplete {
-            case Success(response) => {
-              val allPages = (1 to response.totalPages)
-                  .map(page =>
-                    itemsFetchingActor.ask(page)
-                        .mapTo[ItemsResponse]
-                        .map(_.items)
-                  )
-              Future.foldLeft(allPages)(Seq.empty[Player])(_ ++ _).onComplete {
-                case Success(players) => s ! players
-                case Failure(exception) => s ! exception
-              }
+        .mapTo[ItemsResponse]
+        .onComplete {
+          case Success(response) =>
+            val allPages = (1 to response.totalPages)
+              .map(page =>
+                itemsFetchingActor.ask(page)
+                  .mapTo[ItemsResponse]
+                  .map(_.items)
+              )
+            Future.foldLeft(allPages)(Seq.empty[Player])(_ ++ _).onComplete {
+              case Success(players) => s ! players
+              case Failure(exception) => s ! exception
             }
-            case Failure(exception) => s ! exception
-          }
+          case Failure(exception) => s ! exception
+        }
   }
 }
