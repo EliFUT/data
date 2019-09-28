@@ -1,13 +1,13 @@
 package com.felipecsl.elifut.actors
 
 import akka.actor.{Actor, ActorLogging}
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import akka.http.scaladsl.model.HttpResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 class ItemsRequestingActor(
-    httpRequestFn: HttpRequest => Future[HttpResponse],
+    httpRequestFn: String => Future[HttpResponse],
 ) extends Actor with ActorLogging {
 
   implicit private val dispatcher: ExecutionContext = context.system.dispatcher
@@ -18,7 +18,7 @@ class ItemsRequestingActor(
       val uri = baseUrl + "?jsonParamObject=%7B\"page\":" + page + "%7D"
       val s = sender()
       log.info(s"Requesting $uri...")
-      httpRequestFn(HttpRequest(uri = uri)).onComplete {
+      httpRequestFn(uri).onComplete {
         case Success(response) => s ! response
         case Failure(exception) => s ! exception
       }

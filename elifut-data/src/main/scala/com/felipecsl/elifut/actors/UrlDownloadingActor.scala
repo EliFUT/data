@@ -1,12 +1,13 @@
 package com.felipecsl.elifut.actors
 
-import java.io.{BufferedWriter, File, FileWriter}
+import java.io.File
 
 import akka.actor.{Actor, ActorLogging}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest, HttpResponse, StatusCodes}
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.util.ByteString
+import org.apache.commons.io.FileUtils
 
 import scala.util.{Failure, Success}
 
@@ -32,9 +33,10 @@ class UrlDownloadingActor extends Actor with ActorLogging {
         case Success(HttpResponse(StatusCodes.OK, _, entity, _)) =>
           entity.dataBytes
             .runFold(ByteString(""))(_ ++ _)
-            .map(_.utf8String)
             .onComplete {
-              case Success(str) => writeFile(request.destFilePath, str)
+              case Success(str) => FileUtils.writeByteArrayToFile(
+                new File(request.destFilePath), str.asByteBuffer.array()
+              )
               case Failure(exception) => log.info(s"Failed to write file: $exception")
             }
         case Success(resp@HttpResponse(code, _, _, _)) =>
@@ -43,13 +45,5 @@ class UrlDownloadingActor extends Actor with ActorLogging {
         case Failure(exception) =>
           log.info(s"Request failed: $exception")
       }
-  }
-
-  /** write a `String` to the `filename`. */
-  private def writeFile(filename: String, s: String): Unit = {
-    val file = new File(filename)
-    val bw = new BufferedWriter(new FileWriter(file))
-    bw.write(s)
-    bw.close()
   }
 }

@@ -1,14 +1,14 @@
 package com.felipecsl.elifut
 
 import akka.actor.{ActorSystem, Props}
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpRequest, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCodes}
 import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
 import akka.testkit.{ImplicitSender, TestKit}
 import akka.util.ByteString
 import com.felipecsl.elifut.actors.ItemsRequestingActor
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
-import scala.concurrent.{ExecutionContext, ExecutionContextExecutor, Future}
+import scala.concurrent.{ExecutionContext, Future}
 
 class ItemsRequestingActorSpec(_system: ActorSystem)
     extends TestKit(_system)
@@ -29,7 +29,7 @@ class ItemsRequestingActorSpec(_system: ActorSystem)
         ActorMaterializer(ActorMaterializerSettings(system))
       implicit val context: ExecutionContext = system.dispatcher
       val json = """{"hello":"world"}"""
-      val responseFn: HttpRequest => Future[HttpResponse] =
+      val responseFn: String => Future[HttpResponse] =
         _ => Future.successful {
           HttpResponse(
             status = StatusCodes.OK,
