@@ -4,18 +4,20 @@ import java.io.File
 import java.util.concurrent.TimeUnit
 
 import akka.actor.{ActorSystem, Cancellable, Props}
+import akka.pattern.ask
 import akka.stream.scaladsl.Source
 import akka.util.{ByteString, Timeout}
 import com.felipecsl.elifut.actors.{ItemsResponseParsingActor, UrlDownloadRequest, UrlDownloadingActor}
-import akka.pattern.ask
 import com.felipecsl.elifut.models.Club
 import org.apache.commons.io.FileUtils
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.Failure
 
 object MainApp extends App {
+  private val YEAR = "2020"
+  Util.downloadClubsImages(s"../$YEAR/players/", s"../$YEAR/images/clubs/")
 }
 
 object Util {
@@ -23,7 +25,7 @@ object Util {
   implicit private val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
   implicit private val dispatcher: ExecutionContext = system.dispatcher
 
-  def downloadPlayersJson(): IndexedSeq[Cancellable] = {
+  def downloadPlayersJson(destFilesPath: String): IndexedSeq[Cancellable] = {
     val actorRef = system.actorOf(Props(classOf[UrlDownloadingActor]), "downloader")
     val baseUrl = "https://www.easports.com/fifa/ultimate-team/api/fut/item"
     var e = 0
@@ -31,37 +33,60 @@ object Util {
     (1 to 908).map { i =>
       val request = UrlDownloadRequest(
         uri = baseUrl + "?jsonParamObject=%7B\"page\":" + i + "%7D",
-        destFilePath = s"players$i.json"
+        destFilePath = s"$destFilesPath/players$i.json"
       )
       e += 1
       system.scheduler.scheduleOnce((e * 500) milliseconds, actorRef, request)
     }
   }
 
-  def downloadClubsImages(): Unit = {
-    val year = "2020"
-    val sourceJsonPath = s"../$year/players/"
-    val sourcePath = new File(sourceJsonPath)
+  /** TODO write tests */
+  def downloadClubsImages(playersJsonDirectory: String, destImagesPath: String): Unit = {
+    val sourcePath = new File(playersJsonDirectory)
     val parsingActor = system.actorOf(Props(classOf[ItemsResponseParsingActor]), "rootRequester")
-    sourcePath.listFiles()
-      .map(FileUtils.readFileToByteArray)
-      .map(ByteString.apply)
-      .map(Future.successful)
-      .map(Source.fromFuture)
-      .foreach(
-        parsingActor.ask(_)
-          .mapTo[ItemsResponse]
-          .map(_.items.map(i => i.club))
-          .onComplete {
-            case Success(clubs) => clubs.foreach(downloadClubImages)
-            case Failure(exception) => throw exception
-          }
-      )
+    var e = 0
+    Future.successful(sourcePath)
+      .map(_.listFiles())
+      .map(_.toSeq)
+      .map(_.map(FileUtils.readFileToByteArray))
+      .map(_.map(ByteString.apply))
+      .map(byteStrings => byteStrings.map(bs => Source.fromFuture(Future.successful(bs))))
+      .map(_.map(s => parsingActor.ask(s).mapTo[ItemsResponse]))
+      .flatMap(Future.sequence(_))
+      .map(_.flatMap(_.items))
+      .map(_.map(_.club))
+      .map(_.flatMap(createClubImageDownloadRequests))
+      .map(_.map {
+        e += 1
+        downloadImage(_, destImagesPath, e)
+      })
+      .onComplete {
+        case Failure(e) => throw e
+      }
   }
 
-  def downloadClubImages(club: Club) = {
-    val year = "2020"
-    val destImagesPath = s"../$year/images/clubs/"
-    val downloadingActor = system.actorOf(Props(classOf[UrlDownloadingActor]), "downloader")
+  private case class ImageDownloadRequest(
+    url: String,
+    destPath: String
+  )
+
+  private def createClubImageDownloadRequests(club: Club): Seq[ImageDownloadRequest] = {
+    Seq(
+      ImageDownloadRequest(club.imageUrls.dark.small, s"${club.id}/dark/small"),
+      ImageDownloadRequest(club.imageUrls.dark.medium, s"${club.id}/dark/medium"),
+      ImageDownloadRequest(club.imageUrls.dark.large, s"${club.id}/dark/large"),
+      ImageDownloadRequest(club.imageUrls.light.small, s"${club.id}/light/small"),
+      ImageDownloadRequest(club.imageUrls.light.medium, s"${club.id}/light/medium"),
+      ImageDownloadRequest(club.imageUrls.light.large, s"${club.id}/light/large"),
+    )
+  }
+
+  private def downloadImage(req: ImageDownloadRequest, baseDestPath: String, delay: Int): Unit = {
+    val actorRef = system.actorOf(Props(classOf[UrlDownloadingActor]), "downloader")
+    val request = UrlDownloadRequest(
+      uri = req.url,
+      destFilePath = s"$baseDestPath/${req.destPath}/"
+    )
+    system.scheduler.scheduleOnce(delay milliseconds, actorRef, request)
   }
 }

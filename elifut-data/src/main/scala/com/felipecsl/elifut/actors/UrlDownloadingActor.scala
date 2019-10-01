@@ -28,7 +28,7 @@ class UrlDownloadingActor extends Actor with ActorLogging {
 
   override def receive: PartialFunction[Any, Unit] = {
     case request: UrlDownloadRequest =>
-      log.info(s"Requesting ${request.uri}...")
+      log.info(s"Downloading ${request.uri} to ${request.destFilePath}")
       http.singleRequest(HttpRequest(uri = request.uri)).onComplete {
         case Success(HttpResponse(StatusCodes.OK, _, entity, _)) =>
           entity.dataBytes
