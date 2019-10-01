@@ -29,7 +29,7 @@ class ItemsResponseParsingActorSpec(_system: ActorSystem)
         entity = HttpEntity(ContentTypes.`application/json`, json)
       )
       val actor = system.actorOf(Props(classOf[ItemsResponseParsingActor]), "rootRequester")
-      actor ! httpResponse
+      actor ! httpResponse.entity.dataBytes
       val response = expectMsgType[ItemsResponse]
       response.totalPages should ===(908)
       response.totalResults should ===(21791)

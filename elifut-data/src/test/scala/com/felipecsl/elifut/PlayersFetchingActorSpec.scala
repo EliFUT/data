@@ -30,9 +30,8 @@ class PlayersFetchingActorSpec(_system: ActorSystem)
     "fetch all item pages" in {
       val timeout = Timeout(5, TimeUnit.SECONDS)
       val json = Source.fromResource("singleItemWithNamePlaceholder.json").mkString
-      val responseFn: HttpRequest => Future[HttpResponse] =
-        request => Future.successful {
-          val uri = request.uri.toString()
+      val responseFn: String => Future[HttpResponse] =
+        uri => Future.successful {
           // Use the page number from the URL as the player name
           val finalJson = json.replace(
             "<PLAYER NAME PLACEHOLDER>",

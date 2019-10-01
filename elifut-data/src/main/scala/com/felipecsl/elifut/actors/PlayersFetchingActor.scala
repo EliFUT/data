@@ -1,7 +1,7 @@
 package com.felipecsl.elifut.actors
 
 import akka.actor.{Actor, ActorLogging, Props}
-import akka.http.scaladsl.model.{HttpRequest, HttpResponse}
+import akka.http.scaladsl.model.HttpResponse
 import akka.pattern.ask
 import akka.util.Timeout
 import com.felipecsl.elifut.ItemsResponse
@@ -12,7 +12,7 @@ import scala.util.{Failure, Success}
 
 /** Returns a flattened {{{Seq[Player]}}} with objects from all paginated JSON responses. */
 class PlayersFetchingActor(
-  httpRequestFn: HttpRequest => Future[HttpResponse],
+  httpRequestFn: String => Future[HttpResponse],
   implicit private val timeout: Timeout,
 ) extends Actor with ActorLogging {
   private val system = context.system

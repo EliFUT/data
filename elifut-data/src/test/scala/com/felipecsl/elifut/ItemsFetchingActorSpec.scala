@@ -28,7 +28,7 @@ class ItemsFetchingActorSpec(_system: ActorSystem)
   "An ItemsFetchingActor" must {
     "fetch and parse the HTTP response" in {
       val json = Source.fromResource("item.json").mkString
-      val responseFn: HttpRequest => Future[HttpResponse] =
+      val responseFn: String => Future[HttpResponse] =
         _ => Future.successful {
           HttpResponse(
             status = StatusCodes.OK,
