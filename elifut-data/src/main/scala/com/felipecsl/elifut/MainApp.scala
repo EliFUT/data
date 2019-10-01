@@ -61,8 +61,13 @@ object Util {
       .map(_.map(_.club))
       .map(_.flatMap(createClubImageDownloadRequests))
       .map(_.map { case (url, filename) =>
-        e += 1
-        downloadImage(url, s"$destImagesPath$filename", e * 500)
+        val destFile = s"$destImagesPath$filename"
+        if (!new File(destFile).exists()) {
+          e += 1
+          downloadImage(url, destFile, e * 500)
+        } else {
+          logger.info(s"Skipping $url since destination file already exists")
+        }
       })
       .onComplete {
         case Failure(e) => throw e
