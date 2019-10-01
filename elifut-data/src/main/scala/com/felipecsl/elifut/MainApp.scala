@@ -1,9 +1,11 @@
 package com.felipecsl.elifut
 
 import java.io.File
+import java.net.URL
 import java.util.concurrent.TimeUnit
 
 import akka.actor.{ActorSystem, Cancellable, Props}
+import akka.event.Logging
 import akka.pattern.ask
 import akka.stream.scaladsl.Source
 import akka.util.{ByteString, Timeout}
@@ -13,7 +15,7 @@ import org.apache.commons.io.FileUtils
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Failure
+import scala.util.{Failure, Success}
 
 object MainApp extends App {
   private val YEAR = "2020"
@@ -24,6 +26,8 @@ object Util {
   implicit private val system: ActorSystem = ActorSystem()
   implicit private val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
   implicit private val dispatcher: ExecutionContext = system.dispatcher
+  private val actorRef = system.actorOf(Props(classOf[UrlDownloadingActor]), "downloader")
+  private val logger = Logging(system, actorRef)
 
   def downloadPlayersJson(destFilesPath: String): IndexedSeq[Cancellable] = {
     val actorRef = system.actorOf(Props(classOf[UrlDownloadingActor]), "downloader")
@@ -50,43 +54,41 @@ object Util {
       .map(_.toSeq)
       .map(_.map(FileUtils.readFileToByteArray))
       .map(_.map(ByteString.apply))
-      .map(byteStrings => byteStrings.map(bs => Source.fromFuture(Future.successful(bs))))
-      .map(_.map(s => parsingActor.ask(s).mapTo[ItemsResponse]))
+      .map(_.map(bs => Source.fromFuture(Future.successful(bs))))
+      .map(_.map(parsingActor.ask(_).mapTo[ItemsResponse]))
       .flatMap(Future.sequence(_))
       .map(_.flatMap(_.items))
       .map(_.map(_.club))
       .map(_.flatMap(createClubImageDownloadRequests))
-      .map(_.map {
+      .map(_.map { case (url, filename) =>
         e += 1
-        downloadImage(_, destImagesPath, e)
+        downloadImage(url, s"$destImagesPath$filename", e * 500)
       })
       .onComplete {
         case Failure(e) => throw e
+        case Success(_) => ()
       }
   }
 
-  private case class ImageDownloadRequest(
-    url: String,
-    destPath: String
-  )
-
-  private def createClubImageDownloadRequests(club: Club): Seq[ImageDownloadRequest] = {
-    Seq(
-      ImageDownloadRequest(club.imageUrls.dark.small, s"${club.id}/dark/small"),
-      ImageDownloadRequest(club.imageUrls.dark.medium, s"${club.id}/dark/medium"),
-      ImageDownloadRequest(club.imageUrls.dark.large, s"${club.id}/dark/large"),
-      ImageDownloadRequest(club.imageUrls.light.small, s"${club.id}/light/small"),
-      ImageDownloadRequest(club.imageUrls.light.medium, s"${club.id}/light/medium"),
-      ImageDownloadRequest(club.imageUrls.light.large, s"${club.id}/light/large"),
+  private def createClubImageDownloadRequests(club: Club): Map[String, String] = {
+    val urlToFile: String => String = new URL(_).getPath.split('/').last
+    val images = Seq(
+      club.imageUrls.dark.small,
+      club.imageUrls.dark.medium,
+      club.imageUrls.dark.large,
+      club.imageUrls.light.small,
+      club.imageUrls.light.medium,
+      club.imageUrls.light.large
     )
+    images.map(i => i -> urlToFile(i)).toMap
   }
 
-  private def downloadImage(req: ImageDownloadRequest, baseDestPath: String, delay: Int): Unit = {
-    val actorRef = system.actorOf(Props(classOf[UrlDownloadingActor]), "downloader")
+  private def downloadImage(uri: String, destFilePath: String, delay: Int): String = {
     val request = UrlDownloadRequest(
-      uri = req.url,
-      destFilePath = s"$baseDestPath/${req.destPath}/"
+      uri = uri,
+      destFilePath = destFilePath
     )
     system.scheduler.scheduleOnce(delay milliseconds, actorRef, request)
+    uri
   }
 }

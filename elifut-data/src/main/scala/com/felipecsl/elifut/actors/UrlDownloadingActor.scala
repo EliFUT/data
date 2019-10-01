@@ -35,7 +35,7 @@ class UrlDownloadingActor extends Actor with ActorLogging {
             .runFold(ByteString(""))(_ ++ _)
             .onComplete {
               case Success(str) => FileUtils.writeByteArrayToFile(
-                new File(request.destFilePath), str.asByteBuffer.array()
+                new File(request.destFilePath), str.toArray
               )
               case Failure(exception) => log.info(s"Failed to write file: $exception")
             }
