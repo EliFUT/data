@@ -10,21 +10,22 @@ import akka.pattern.ask
 import akka.stream.scaladsl.Source
 import akka.util.{ByteString, Timeout}
 import com.felipecsl.elifut.actors.{ItemsResponseParsingActor, UrlDownloadRequest, UrlDownloadingActor}
-import com.felipecsl.elifut.models.Club
+import com.felipecsl.elifut.models.Player
 import org.apache.commons.io.FileUtils
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.postfixOps
 import scala.util.{Failure, Success}
 
 object MainApp extends App {
   private val YEAR = "2020"
-  Util.downloadClubsImages(s"../$YEAR/players/", s"../$YEAR/images/clubs/")
+  Util.downloadNationsImages(s"../$YEAR/players/", s"../$YEAR/images/nations/")
 }
 
 object Util {
   implicit private val system: ActorSystem = ActorSystem()
-  implicit private val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
+  implicit private val timeout: Timeout = Timeout(10, TimeUnit.SECONDS)
   implicit private val dispatcher: ExecutionContext = system.dispatcher
   private val actorRef = system.actorOf(Props(classOf[UrlDownloadingActor]), "downloader")
   private val logger = Logging(system, actorRef)
@@ -44,8 +45,20 @@ object Util {
     }
   }
 
-  /** TODO write tests */
   def downloadClubsImages(playersJsonDirectory: String, destImagesPath: String): Unit = {
+    downloadImages(playersJsonDirectory, destImagesPath, createClubImageDownloadRequests)
+  }
+
+  def downloadNationsImages(playersJsonDirectory: String, destImagesPath: String): Unit = {
+    downloadImages(playersJsonDirectory, destImagesPath, createNationImageDownloadRequests)
+  }
+
+  /** TODO write tests */
+  def downloadImages(
+    playersJsonDirectory: String,
+    destImagesPath: String,
+    playerToImages: Player => Map[String, String]
+  ): Unit = {
     val sourcePath = new File(playersJsonDirectory)
     val parsingActor = system.actorOf(Props(classOf[ItemsResponseParsingActor]), "rootRequester")
     var e = 0
@@ -58,16 +71,12 @@ object Util {
       .map(_.map(parsingActor.ask(_).mapTo[ItemsResponse]))
       .flatMap(Future.sequence(_))
       .map(_.flatMap(_.items))
-      .map(_.map(_.club))
-      .map(_.flatMap(createClubImageDownloadRequests))
+      .map(_.flatMap(playerToImages))
+      .map(_.toSet)
       .map(_.map { case (url, filename) =>
         val destFile = s"$destImagesPath$filename"
-        if (!new File(destFile).exists()) {
-          e += 1
-          downloadImage(url, destFile, e * 500)
-        } else {
-          logger.info(s"Skipping $url since destination file already exists")
-        }
+        e += 1
+        downloadImage(url, destFile, e * 500)
       })
       .onComplete {
         case Failure(e) => throw e
@@ -75,8 +84,14 @@ object Util {
       }
   }
 
-  private def createClubImageDownloadRequests(club: Club): Map[String, String] = {
-    val urlToFile: String => String = new URL(_).getPath.split('/').last
+  private def createClubImageDownloadRequests(player: Player): Map[String, String] = {
+    val club = player.club
+    // Url ends with eg "normal/240.png" or "dark/240.png"
+    val clubUrlToFile: String => String = new URL(_)
+      .getPath
+      .split('/')
+      .takeRight(2)
+      .mkString("/")
     val images = Seq(
       club.imageUrls.dark.small,
       club.imageUrls.dark.medium,
@@ -85,7 +100,21 @@ object Util {
       club.imageUrls.light.medium,
       club.imageUrls.light.large
     )
-    images.map(i => i -> urlToFile(i)).toMap
+    images.map(i => i -> clubUrlToFile(i)).toMap
+  }
+
+  private def createNationImageDownloadRequests(player: Player): Map[String, String] = {
+    val nation = player.nation
+    val nationUrlToFile: String => String = new URL(_)
+      .getPath
+      .split('/')
+      .last
+    val images = Seq(
+      nation.imageUrls.small,
+      nation.imageUrls.medium,
+      nation.imageUrls.large,
+    )
+    images.map(i => i -> nationUrlToFile(i)).toMap
   }
 
   private def downloadImage(uri: String, destFilePath: String, delay: Int): String = {

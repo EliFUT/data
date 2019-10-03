@@ -16,7 +16,7 @@ case class UrlDownloadRequest(
   destFilePath: String,
 )
 
-/** Downloads data from a provided URI to a destination file */
+/** Downloads data from a provided URI to a destination file (if it doesnt already exist) */
 class UrlDownloadingActor extends Actor with ActorLogging {
 
   import context.dispatcher
@@ -28,22 +28,27 @@ class UrlDownloadingActor extends Actor with ActorLogging {
 
   override def receive: PartialFunction[Any, Unit] = {
     case request: UrlDownloadRequest =>
-      log.info(s"Downloading ${request.uri} to ${request.destFilePath}")
-      http.singleRequest(HttpRequest(uri = request.uri)).onComplete {
-        case Success(HttpResponse(StatusCodes.OK, _, entity, _)) =>
-          entity.dataBytes
-            .runFold(ByteString(""))(_ ++ _)
-            .onComplete {
-              case Success(str) => FileUtils.writeByteArrayToFile(
-                new File(request.destFilePath), str.toArray
-              )
-              case Failure(exception) => log.info(s"Failed to write file: $exception")
-            }
-        case Success(resp@HttpResponse(code, _, _, _)) =>
-          log.info("Request failed, response code: " + code)
-          resp.discardEntityBytes()
-        case Failure(exception) =>
-          log.info(s"Request failed: $exception")
+      val filePath = request.destFilePath
+      val uri = request.uri
+      val destFile = new File(filePath)
+      if (destFile.exists()) {
+        log.info(s"Skipping $filePath ($uri) since destination file already exists")
+      } else {
+        log.info(s"Downloading $uri to $filePath")
+        http.singleRequest(HttpRequest(uri = uri)).onComplete {
+          case Success(HttpResponse(StatusCodes.OK, _, entity, _)) =>
+            entity.dataBytes
+              .runFold(ByteString(""))(_ ++ _)
+              .onComplete {
+                case Success(str) => FileUtils.writeByteArrayToFile(destFile, str.toArray)
+                case Failure(exception) => log.info(s"Failed to write file: $exception")
+              }
+        }
       }
+      case Success(resp@HttpResponse(code, _, _, _)) =>
+        log.info("Request failed, response code: " + code)
+        resp.discardEntityBytes()
+      case Failure(exception) =>
+        log.info(s"Request failed: $exception")
   }
 }
